@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover">
+  <meta name="description" content="Dezzert Dudess - Premium Dessert Café Menu">
+  <meta name="theme-color" content="#060606">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Dezzert Dudess | Premium Dessert Menu</title>
+  <link rel="preconnect" href="https://drive.google.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Tenor+Sans&family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    :root {
+      --bg: #060606;
+      --sf: #0e0e0e;
+      --card: #131313;
+      --lime: #A8E10C;
+      --limeg: rgba(168, 225, 12, .3);
+      --gold: #D4A853;
+      --gold-light: #FCEABB;
+      --w: #FAF5EB;
+      --w60: rgba(250, 245, 235, .6);
+      --w30: rgba(250, 245, 235, .3);
+      --w10: rgba(250, 245, 235, .1);
+      --w05: rgba(250, 245, 235, .05);
+      --cb: rgba(40, 120, 240, .18);
+      --cg: rgba(60, 150, 255, .12);
+      --ct: #7bb8ff;
+      --hb: rgba(255, 90, 15, .18);
+      --hg: rgba(255, 110, 30, .12);
+      --ht: #ffb05c;
+      --r: 14px;
+      --pill: 50px;
+      --ease: cubic-bezier(.22, 1, .36, 1);
+      --fb: 'Playfair Display', serif;
+      --fh: 'Tenor Sans', sans-serif;
+      --fi: 'Lora', serif;
+      --fd: 'DM Sans', sans-serif;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    body {
+      font-family: var(--fd);
+      background: var(--bg);
+      color: var(--w);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased
+    }
+
+    /* ══ VIBE OVERLAY — full-screen cold/hot ambient ══ */
+    #vibe {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      transition: opacity .8s ease, background 1s ease;
+      opacity: 0
+    }
+
+    #vibe.cold {
+      opacity: 1;
+      background:
+        radial-gradient(ellipse at -8% 40%, rgba(30, 100, 230, .28) 0%, transparent 55%),
+        radial-gradient(ellipse at 108% 60%, rgba(30, 100, 230, .28) 0%, transparent 55%),
+        radial-gradient(ellipse at 50% -5%, rgba(60, 140, 255, .12) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% 105%, rgba(50, 130, 250, .1) 0%, transparent 35%)
+    }
+
+    #vibe.hot {
+      opacity: 1;
+      background:
+        radial-gradient(ellipse at -8% 60%, rgba(255, 80, 10, .28) 0%, transparent 55%),
+        radial-gradient(ellipse at 108% 40%, rgba(255, 80, 10, .28) 0%, transparent 55%),
+        radial-gradient(ellipse at 50% 105%, rgba(255, 100, 20, .12) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% -5%, rgba(255, 90, 15, .1) 0%, transparent 35%)
+    }
+
+    #vibe.off {
+      opacity: 0
+    }
+
+    /* Pulsing animation on the overlay */
+    #vibe.cold::after,
+    #vibe.hot::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      animation: vibePulse 4s ease-in-out infinite
+    }
+
+    #vibe.cold::after {
+      background: radial-gradient(ellipse at 50% 50%, rgba(50, 130, 240, .04) 0%, transparent 70%)
+    }
+
+    #vibe.hot::after {
+      background: radial-gradient(ellipse at 50% 50%, rgba(255, 100, 20, .04) 0%, transparent 70%)
+    }
+
+    @keyframes vibePulse {
+
+      0%,
+      100% {
+        opacity: .3;
+        transform: scale(1)
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1.05)
+      }
+    }
+
+    /* ══ LOADER ══ */
+    #loader {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 18px
+    }
+
+    .ld-b {
+      font-family: var(--fb);
+      font-weight: 700;
+      font-style: italic;
+      font-size: clamp(2rem, 9vw, 3.8rem);
+      color: var(--lime);
+      opacity: 0;
+      transform: scale(.92);
+      letter-spacing: .03em
+    }
+
+    .ld-l {
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--lime), transparent);
+      border-radius: 2px
+    }
+
+    .ld-s {
+      font-family: var(--fi);
+      font-style: italic;
+      font-size: clamp(.78rem, 2.3vw, .95rem);
+      color: var(--w60);
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      opacity: 0;
+      transform: translateY(10px)
+    }
+
+    .ld-d {
+      display: flex;
+      gap: 5px;
+      opacity: 0
+    }
+
+    .ld-d span {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--lime);
+      animation: dp 1.2s ease-in-out infinite
+    }
+
+    .ld-d span:nth-child(2) {
+      animation-delay: .15s
+    }
+
+    .ld-d span:nth-child(3) {
+      animation-delay: .3s
+    }
+
+    @keyframes dp {
+
+      0%,
+      100% {
+        opacity: .2;
+        transform: scale(.8)
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1.3)
+      }
+    }
+
+    /* ══ HEADER ══ */
+    #app {
+      opacity: 0;
+      position: relative;
+      z-index: 2
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 10px 14px 8px;
+      background: rgba(6, 6, 6, .92);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border-bottom: 1px solid var(--w05)
+    }
+
+    .hdr {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .brand {
+      font-family: var(--fb);
+      font-weight: 700;
+      font-style: italic;
+      font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+      white-space: nowrap;
+      letter-spacing: .02em;
+      background: linear-gradient(90deg, var(--lime), #e0f59a, var(--lime), #b8dc20, var(--lime));
+      background-size: 400% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: bg 5s ease infinite
+    }
+
+    @keyframes bg {
+
+      0%,
+      100% {
+        background-position: 0% 0
+      }
+
+      50% {
+        background-position: 400% 0
+      }
+    }
+
+    .srch {
+      flex: 1;
+      position: relative;
+      max-width: 280px;
+      margin-left: auto
+    }
+
+    .srch svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      stroke: var(--w30);
+      stroke-width: 2;
+      fill: none;
+      pointer-events: none;
+      transition: stroke .3s
+    }
+
+    .srch input {
+      width: 100%;
+      padding: 8px 12px 8px 32px;
+      border: 1px solid var(--w05);
+      border-radius: var(--pill);
+      background: var(--w05);
+      color: var(--w);
+      font-family: var(--fd);
+      font-size: .8rem;
+      outline: none;
+      transition: all .3s var(--ease)
+    }
+
+    .srch input:focus {
+      border-color: var(--lime);
+      background: rgba(168, 225, 12, .03);
+      box-shadow: 0 0 18px rgba(168, 225, 12, .06)
+    }
+
+    .srch input:focus~svg {
+      stroke: var(--lime)
+    }
+
+    .srch input::placeholder {
+      color: var(--w30)
+    }
+
+    /* ══ CATEGORIES ══ */
+    .cn {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 10px 14px 3px;
+      scrollbar-width: none
+    }
+
+    .cn::-webkit-scrollbar {
+      display: none
+    }
+
+    .cb {
+      flex-shrink: 0;
+      padding: 7px 14px;
+      border: 1px solid var(--w10);
+      border-radius: var(--pill);
+      background: transparent;
+      color: var(--w60);
+      font-family: var(--fd);
+      font-size: .75rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .3s var(--ease);
+      white-space: nowrap
+    }
+
+    .cb:active {
+      transform: scale(.95)
+    }
+
+    .cb.on {
+      background: var(--lime);
+      color: var(--bg);
+      border-color: var(--lime);
+      font-weight: 600;
+      box-shadow: 0 0 16px var(--limeg)
+    }
+
+    /* Cold/hot category pill accents */
+    .cb[data-v="cold"].on {
+      background: linear-gradient(135deg, #4d9fff, #2979e6);
+      border-color: #4d9fff;
+      box-shadow: 0 0 18px rgba(40, 120, 240, .3)
+    }
+
+    .cb[data-v="hot"].on {
+      background: linear-gradient(135deg, #ff8533, #e65c00);
+      border-color: #ff8533;
+      box-shadow: 0 0 18px rgba(255, 90, 15, .3)
+    }
+
+    .sn {
+      display: flex;
+      gap: 5px;
+      overflow-x: auto;
+      padding: 5px 14px 2px;
+      scrollbar-width: none
+    }
+
+    .sn::-webkit-scrollbar {
+      display: none
+    }
+
+    .sb {
+      flex-shrink: 0;
+      padding: 5px 12px;
+      border: 1px solid rgba(168, 225, 12, .08);
+      border-radius: var(--pill);
+      background: transparent;
+      color: var(--w30);
+      font-family: var(--fd);
+      font-size: .7rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .3s var(--ease);
+      white-space: nowrap
+    }
+
+    .sb.on {
+      background: rgba(168, 225, 12, .1);
+      color: var(--lime);
+      border-color: rgba(168, 225, 12, .25)
+    }
+
+    /* ══ SECTIONS ══ */
+    .mA {
+      padding: 4px 0 90px
+    }
+
+    .sec {
+      position: relative;
+      padding: 14px 12px;
+      margin-bottom: 4px;
+      overflow: hidden
+    }
+
+    .sec>* {
+      position: relative;
+      z-index: 1
+    }
+
+    /* COLD section ambient */
+    .sec[data-v="cold"]::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      background: radial-gradient(ellipse at 15% 35%, rgba(40, 110, 230, .1) 0%, transparent 50%), radial-gradient(ellipse at 85% 70%, rgba(50, 130, 250, .07) 0%, transparent 45%);
+      pointer-events: none;
+      z-index: 0;
+      border-radius: 20px;
+      opacity: 0;
+      transition: opacity .8s ease
+    }
+
+    .sec[data-v="cold"].iv::before {
+      opacity: 1
+    }
+
+    .sec[data-v="cold"]::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1s ease;
+      background-image: radial-gradient(1.5px 1.5px at 10% 22%, rgba(140, 200, 255, .55) 50%, transparent 50%), radial-gradient(1px 1px at 30% 58%, rgba(120, 185, 255, .45) 50%, transparent 50%), radial-gradient(2px 2px at 55% 32%, rgba(160, 210, 255, .35) 50%, transparent 50%), radial-gradient(1px 1px at 78% 72%, rgba(130, 195, 255, .5) 50%, transparent 50%), radial-gradient(1.5px 1.5px at 92% 42%, rgba(150, 205, 255, .4) 50%, transparent 50%);
+      animation: ice 11s ease-in-out infinite
+    }
+
+    .sec[data-v="cold"].iv::after {
+      opacity: 1
+    }
+
+    @keyframes ice {
+
+      0%,
+      100% {
+        transform: translate(0, 0)
+      }
+
+      33% {
+        transform: translate(3px, -12px)
+      }
+
+      66% {
+        transform: translate(-4px, -6px)
+      }
+    }
+
+    /* HOT section ambient */
+    .sec[data-v="hot"]::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      background: radial-gradient(ellipse at 20% 45%, rgba(255, 100, 20, .1) 0%, transparent 50%), radial-gradient(ellipse at 80% 65%, rgba(255, 80, 10, .07) 0%, transparent 45%);
+      pointer-events: none;
+      z-index: 0;
+      border-radius: 20px;
+      opacity: 0;
+      transition: opacity .8s ease
+    }
+
+    .sec[data-v="hot"].iv::before {
+      opacity: 1
+    }
+
+    .sec[data-v="hot"]::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1s ease;
+      background-image: radial-gradient(1.5px 1.5px at 14% 78%, rgba(255, 140, 50, .5) 50%, transparent 50%), radial-gradient(1px 1px at 34% 88%, rgba(255, 115, 30, .4) 50%, transparent 50%), radial-gradient(2px 2px at 58% 68%, rgba(255, 130, 40, .35) 50%, transparent 50%), radial-gradient(1px 1px at 76% 82%, rgba(255, 95, 15, .45) 50%, transparent 50%), radial-gradient(1.5px 1.5px at 90% 58%, rgba(255, 120, 45, .35) 50%, transparent 50%);
+      animation: fire 7s ease-in-out infinite
+    }
+
+    .sec[data-v="hot"].iv::after {
+      opacity: 1
+    }
+
+    @keyframes fire {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-18px)
+      }
+    }
+
+    /* Section title */
+    .st {
+      font-family: var(--fh);
+      font-size: 1.05rem;
+      font-weight: 400;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      padding-left: 2px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all .5s var(--ease)
+    }
+
+    .st.vis {
+      opacity: 1;
+      transform: none
+    }
+
+    .st i {
+      font-style: normal;
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      margin-right: 8px;
+      vertical-align: middle
+    }
+
+    .sec[data-v="cold"] .st i {
+      background: var(--ct);
+      box-shadow: 0 0 10px var(--cg)
+    }
+
+    .sec[data-v="hot"] .st i {
+      background: var(--ht);
+      box-shadow: 0 0 10px var(--hg)
+    }
+
+    .sec[data-v="neutral"] .st i {
+      background: var(--lime);
+      box-shadow: 0 0 8px var(--limeg)
+    }
+
+    .category-header {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      color: var(--gold-light);
+    }
+
+    .sub-header {
+      font-size: 1.25rem;
+      color: var(--w);
+      opacity: 0.9;
+      margin-top: 5px;
+    }
+
+    /* ══ GRID + CARDS ══ */
+    .g {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px
+    }
+
+    .nr {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 50px 16px;
+      color: var(--w30);
+      font-family: var(--fi);
+      font-style: italic;
+      font-size: .95rem
+    }
+
+    .c {
+      position: relative;
+      border-radius: var(--r);
+      overflow: hidden;
+      background: var(--card);
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: transform .4s var(--ease), opacity .4s var(--ease), box-shadow .3s ease;
+      border: 1px solid transparent;
+      contain: layout style paint
+    }
+
+    .c.vis {
+      opacity: 1;
+      transform: none
+    }
+
+    .c:active {
+      transform: scale(.97) !important;
+      transition-duration: .1s
+    }
+
+    /* Cold/hot card borders — STRONG glow visible even with images */
+    .sec[data-v="cold"] .c {
+      border: 1.5px solid rgba(80, 160, 255, .35);
+      box-shadow: 0 0 18px rgba(50, 130, 240, .22), 0 4px 28px rgba(50, 130, 240, .1)
+    }
+
+    .sec[data-v="hot"] .c {
+      border: 1.5px solid rgba(255, 120, 40, .35);
+      box-shadow: 0 0 18px rgba(255, 90, 15, .22), 0 4px 28px rgba(255, 90, 15, .1)
+    }
+
+    .sec[data-v="neutral"] .c {
+      border-color: var(--w10)
+    }
+
+    .ciw {
+      position: relative;
+      aspect-ratio: 1/1;
+      overflow: hidden;
+      background: var(--sf)
+    }
+
+    /* COLOR TINT OVERLAY on images — cold=blue tint, hot=amber tint */
+    .sec[data-v="cold"] .ciw::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(20, 70, 180, .15) 0%, rgba(20, 70, 180, .04) 30%, transparent 50%, rgba(20, 70, 180, .04) 75%, rgba(20, 70, 180, .12) 100%);
+      mix-blend-mode: screen
+    }
+
+    .sec[data-v="hot"] .ciw::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(200, 70, 0, .15) 0%, rgba(200, 70, 0, .04) 30%, transparent 50%, rgba(200, 70, 0, .04) 75%, rgba(200, 70, 0, .12) 100%);
+      mix-blend-mode: screen
+    }
+
+    .ci {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity .5s ease, transform .4s var(--ease)
+    }
+
+    .ci.ld {
+      opacity: 1
+    }
+
+    .c:active .ci.ld {
+      transform: scale(1.03)
+    }
+
+    .sk {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, var(--sf) 30%, #171717 50%, var(--sf) 70%);
+      background-size: 200% 100%;
+      animation: sh 1.3s ease infinite
+    }
+
+    @keyframes sh {
+      to {
+        background-position: -200% 0
+      }
+    }
+
+    .sk.hd {
+      opacity: 0;
+      transition: opacity .4s
+    }
+
+    .ph {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-align: center;
+      padding: 14px
+    }
+
+    .sec[data-v="cold"] .ph {
+      background: linear-gradient(150deg, #050c1c, #0a1935, #06122d)
+    }
+
+    .sec[data-v="hot"] .ph {
+      background: linear-gradient(150deg, #180d03, #231005, #1a0c04)
+    }
+
+    .ph {
+      background: linear-gradient(150deg, #09090e, #0e0e18, #0b0b12)
+    }
+
+    .ph em {
+      font-size: 2.2rem;
+      opacity: .2;
+      font-style: normal
+    }
+
+    .ph small {
+      font-family: var(--fh);
+      font-size: .58rem;
+      color: rgba(250, 245, 235, .08);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      max-width: 85%
+    }
+
+    .cfo {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 32px 10px 10px;
+      background: linear-gradient(to top, rgba(0, 0, 0, .88) 0%, rgba(0, 0, 0, .35) 55%, transparent 100%)
+    }
+
+    .cn2 {
+      font-family: var(--fi);
+      font-weight: 600;
+      font-style: italic;
+      font-size: .92rem;
+      line-height: 1.2
+    }
+
+    .cp {
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--gold);
+      margin-top: 3px
+    }
+
+    /* ══ MODAL ══ */
+    .mo {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      display: none;
+      align-items: flex-end;
+      justify-content: center
+    }
+
+    .mo.open {
+      display: flex
+    }
+
+    .mbg {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0);
+      backdrop-filter: blur(0);
+      -webkit-backdrop-filter: blur(0)
+    }
+
+    .mc {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      max-height: 93vh;
+      border-radius: var(--r) var(--r) 0 0;
+      overflow: hidden;
+      background: var(--card);
+      z-index: 1;
+      transform: translateY(100%);
+      opacity: 0
+    }
+
+    .miw {
+      aspect-ratio: 9/16;
+      overflow: hidden;
+      background: var(--sf);
+      position: relative
+    }
+
+    .mi {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.06);
+      opacity: 0
+    }
+
+    .mph {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(150deg, #050c1c, #0a1935, #06122d)
+    }
+
+    .mph em {
+      font-size: 4rem;
+      opacity: .1;
+      font-style: normal
+    }
+
+    .mfo {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 48px 18px 26px;
+      background: linear-gradient(to top, rgba(0, 0, 0, .95) 0%, rgba(0, 0, 0, .5) 55%, transparent 100%)
+    }
+
+    .mn {
+      font-family: var(--fi);
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-style: italic;
+      line-height: 1.15;
+      opacity: 0;
+      transform: translateY(16px)
+    }
+
+    .mpr {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--gold);
+      margin-top: 4px;
+      opacity: 0;
+      transform: translateY(10px)
+    }
+
+    .ms {
+      font-family: var(--fd);
+      font-size: .7rem;
+      color: var(--w60);
+      margin-top: 5px;
+      letter-spacing: .03em;
+      opacity: 0;
+      transform: translateY(7px)
+    }
+
+    /* CLOSE — TOP RIGHT */
+    .mx {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(250, 245, 235, .15);
+      background: rgba(0, 0, 0, .5);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--w);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      opacity: 0;
+      transform: scale(.6);
+      transition: background .3s, border-color .3s
+    }
+
+    .mx:active {
+      background: rgba(168, 225, 12, .3);
+      border-color: var(--lime)
+    }
+
+    .ft {
+      text-align: center;
+      padding: 22px 14px 14px;
+      color: var(--w30);
+      font-size: .66rem;
+      letter-spacing: .03em;
+      border-top: 1px solid var(--w05)
+    }
+
+    .ft b {
+      color: var(--lime);
+      font-weight: 600
+    }
+
+    ::-webkit-scrollbar {
+      width: 3px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(168, 225, 12, .1);
+      border-radius: 3px
+    }
+
+    @media(min-width:480px) {
+      .g {
+        gap: 12px
+      }
+
+      .cn2 {
+        font-size: .98rem
+      }
+    }
+
+    @media(min-width:768px) {
+      .g {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px
+      }
+
+      .sec {
+        padding: 16px 20px
+      }
+
+      .mo {
+        align-items: center
+      }
+
+      .mc {
+        border-radius: var(--r);
+        max-height: 88vh
+      }
+    }
+
+    @media(min-width:1024px) {
+      .g {
+        gap: 16px
+      }
+
+      .sec {
+        padding: 16px 28px
+      }
+    }
+
+    @media(min-width:1280px) {
+      .g {
+        grid-template-columns: repeat(4, 1fr)
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important
+      }
+    }
+
+    /* ══ MANGO SPECIAL CAROUSEL ══ */
+    .mango-section {
+      position: relative;
+      padding: 16px 0 10px;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,165,0,.06) 0%, transparent 100%);
+    }
+    .mango-section::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      background: radial-gradient(ellipse at 0% 50%, rgba(255,165,0,.12) 0%, transparent 50%),
+                  radial-gradient(ellipse at 100% 50%, rgba(255,200,0,.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .mango-header {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px 10px;
+    }
+    .mango-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-style: italic;
+      font-size: 1.35rem;
+      background: linear-gradient(135deg, #FFD700, #FFA500, #FF8C00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .mango-header .mango-icon {
+      font-size: 1.4rem;
+    }
+    .mango-badge {
+      font-family: var(--fd);
+      font-size: .55rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #FF8C00, #FFD700);
+      color: #1a0800;
+      margin-left: auto;
+    }
+    .mango-scroll {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 0 14px 12px;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mango-scroll::-webkit-scrollbar { display: none; }
+    .mango-card {
+      flex: 0 0 160px;
+      scroll-snap-align: start;
+      border-radius: var(--r);
+      overflow: hidden;
+      background: var(--card);
+      cursor: pointer;
+      border: 1.5px solid rgba(255, 165, 0, .3);
+      box-shadow: 0 0 16px rgba(255, 140, 0, .15), 0 4px 20px rgba(255, 100, 0, .08);
+      transition: transform .3s var(--ease), box-shadow .3s ease;
+      position: relative;
+    }
+    .mango-card:active { transform: scale(.96); }
+    .mango-card .mc-img {
+      position: relative;
+      aspect-ratio: 1/1;
+      overflow: hidden;
+      background: linear-gradient(150deg, #1a0e00, #261400, #1a0e00);
+    }
+    .mango-card .mc-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity .5s ease;
+    }
+    .mango-card .mc-img img.ld { opacity: 1; }
+    .mango-card .mc-img .sk {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, #1a0e00 30%, #2a1800 50%, #1a0e00 70%);
+      background-size: 200% 100%;
+      animation: sh 1.3s ease infinite;
+    }
+    .mango-card .mc-img::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255,140,0,.1) 0%, transparent 40%, transparent 60%, rgba(255,140,0,.08) 100%);
+      mix-blend-mode: screen;
+    }
+    .mango-card .mc-info {
+      padding: 8px 10px 10px;
+    }
+    .mango-card .mc-name {
+      font-family: var(--fi);
+      font-weight: 600;
+      font-style: italic;
+      font-size: .82rem;
+      line-height: 1.2;
+      color: var(--w);
+    }
+    .mango-card .mc-price {
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: .95rem;
+      color: #FFD700;
+      margin-top: 2px;
+    }
+    /* Coming Soon overlay */
+    .mango-card.coming-soon .mc-img::before {
+      content: 'COMING SOON';
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.7);
+      color: #FFD700;
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: .85rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+    }
+    .mango-card.coming-soon {
+      opacity: .75;
+      border-color: rgba(255,165,0,.15);
+    }
+    .mango-card .mc-ph {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: linear-gradient(150deg, #1a0e00, #261400, #1a0e00);
+    }
+    .mango-card .mc-ph em {
+      font-size: 2rem;
+      opacity: .2;
+      font-style: normal;
+    }
+    .mango-card .mc-ph small {
+      font-family: var(--fh);
+      font-size: .5rem;
+      color: rgba(255,200,100,.12);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    /* ══ STICKY CATEGORY NAV ══ */
+    .sticky-nav {
+      position: sticky;
+      top: 48px;
+      z-index: 90;
+      background: rgba(6,6,6,.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--w05);
+      transition: box-shadow .3s ease;
+    }
+    .sticky-nav.stuck {
+      box-shadow: 0 4px 20px rgba(0,0,0,.5);
+    }
+  </style>
+</head>
+
+<body>
+  <div id="vibe"></div>
+  <div id="loader">
+    <div class="ld-b">Dezzert Dudess</div>
+    <div class="ld-l"></div>
+    <div class="ld-s">Thickshake · Waffle · Brownie · Premium Dessert</div>
+    <div class="ld-d"><span></span><span></span><span></span></div>
+  </div>
+  <div id="app">
+    <header>
+      <div class="hdr">
+        <div class="brand">Dezzert Dudess</div>
+        <div class="srch"><svg viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg><input type="text" id="si" placeholder="Search menu..." autocomplete="off" /></div>
+      </div>
+    </header>
+    <div id="mangoSection" class="mango-section" style="display:none">
+      <div class="mango-header">
+        <span class="mango-icon">🥭</span>
+        <h2>Mango Special</h2>
+        <span class="mango-badge">LIMITED EDITION</span>
+      </div>
+      <div id="mangoScroll" class="mango-scroll"></div>
+    </div>
+    <div id="stickyNav" class="sticky-nav">
+      <nav id="cN" class="cn"></nav>
+      <nav id="sN" class="sn"></nav>
+    </div>
+    <main id="mA" class="mA"></main>
+    <footer class="ft">Crafted with ♥ by <b>Dezzert Dudess</b> · Premium Desserts</footer>
+  </div>
+  <div id="modal" class="mo">
+    <div class="mbg"></div>
+    <div class="mc">
+      <button id="mx" class="mx" aria-label="Close">✕</button>
+      <div id="miw" class="miw"></div>
+      <div class="mfo">
+        <div id="mn" class="mn"></div>
+        <div id="mp" class="mpr"></div>
+        <div id="msb" class="ms"></div>
+      </div>
+    </div>
+  </div>
+  <script>/* ═══ DEZZERT DUDESS — $25K Engine (Excel-Driven) ═══ */
+    var EXCEL_FILE = 'Digital Menu DD.xlsx';
+    var MENU = [], aCat = 'All', aSub = 'All', sQ = '', curVibe = '';
+    var CV = {
+      'Thickshakes': 'cold', 'Thichshakes': 'cold', 'Hot Chocolates': 'hot', 'Hot Brownies': 'hot',
+      'Cold Coffees': 'cold', 'Waffles': 'hot', 'Pancakes': 'hot',
+      'Toppings': 'neutral', 'Icecreams': 'cold'
+    };
+    var CE = {
+      'Thickshakes': '🥤', 'Thichshakes': '🥤', 'Hot Chocolates': '☕', 'Hot Brownies': '🍫',
+      'Cold Coffees': '🧊', 'Waffles': '🧇', 'Pancakes': '🥞',
+      'Toppings': '✨', 'Icecreams': '🍦'
+    };
+    var MANGO = [];
+    var $ = function (s) { return document.querySelector(s) };
+    var $$ = function (s) { return document.querySelectorAll(s) };
+
+    /* ── Google Drive URL — smaller for cards, bigger for modal ── */
+    function gdCard(url) {
+      if (!url || typeof url !== 'string') return '';
+      var m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      return m ? 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w400' : '';
+    }
+    function gdFull(url) {
+      if (!url || typeof url !== 'string') return '';
+      var m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      return m ? 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w800' : '';
+    }
+
+    /* ── Load Excel ── */
+    function loadExcel() {
+      var ls = $('.ld-s'); if (ls) ls.textContent = 'Loading menu...';
+      return fetch(EXCEL_FILE)
+        .then(function (r) { return r.arrayBuffer(); })
+        .then(function (buf) {
+          var wb = XLSX.read(buf, { type: 'array' });
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          var rows = XLSX.utils.sheet_to_json(ws);
+          MENU = rows.map(function (r) {
+            var imgRaw = r['Image '] || r['Image'] || '';
+            var exRaw = r['Exploded Image'] || '';
+            return {
+              c: (r['Category'] || '').trim(),
+              s: (r['Sub Category'] || '').trim(),
+              n: (r['Menu Item'] || '').trim(),
+              p: r['My Selling Price (Rs.)'] || 0,
+              img: gdCard(imgRaw),
+              imgRaw: imgRaw,
+              ex: gdFull(exRaw),
+              exRaw: exRaw
+            };
+          }).filter(function (i) { return i.c && i.n; });
+        });
+    }
+
+    /* ── VIBE SYSTEM — the cold/hot magic ── */
+    function setVibe(v) {
+      if (v === curVibe) return;
+      curVibe = v;
+      var el = $('#vibe');
+      el.className = v ? v : 'off';
+    }
+
+    /* ── Intro ── */
+    function playIntro(cb) {
+      var tl = gsap.timeline({
+        onComplete: function () {
+          gsap.to('#loader', { opacity: 0, duration: .4, ease: 'power2.inOut', onComplete: function () { $('#loader').style.display = 'none'; } });
+          gsap.to('#app', { opacity: 1, duration: .5, ease: 'power2.out' });
+          if (cb) cb();
+        }
+      });
+      tl.to('.ld-b', { opacity: 1, scale: 1, duration: .7, ease: 'power3.out' }, 0.2)
+        .to('.ld-l', { width: '55px', duration: .45, ease: 'power2.out' }, 0.5)
+        .to('.ld-s', { opacity: 1, y: 0, duration: .45, ease: 'power3.out' }, 0.65)
+        .to('.ld-d', { opacity: 1, duration: .25 }, 0.8)
+        .to({}, { duration: 0.6 });
+    }
+
+    /* ── Categories ── */
+    function getCats() { var s = []; MENU.forEach(function (i) { if (s.indexOf(i.c) === -1) s.push(i.c); }); return s; }
+    function getSubs(cat) { var s = []; MENU.forEach(function (i) { if (i.c === cat && i.s && s.indexOf(i.s) === -1) s.push(i.s); }); return s; }
+
+    function renderCats() {
+      var nav = $('#cN'), cats = getCats();
+      var h = '<button class="cb' + (aCat === 'All' ? ' on' : '') + '" data-c="All">✦ All</button>';
+      cats.forEach(function (c) {
+        var v = CV[c] || 'neutral';
+        h += '<button class="cb' + (c === aCat ? ' on' : '') + '" data-c="' + c + '" data-v="' + v + '">' + (CE[c] || '') + ' ' + c + '</button>';
+      });
+      nav.innerHTML = h;
+      nav.querySelectorAll('.cb').forEach(function (b) {
+        b.onclick = function () {
+          aCat = b.dataset.c; aSub = 'All'; sQ = ''; $('#si').value = '';
+          // ── CRITICAL: Update vibe on category switch ──
+          if (aCat === 'All') {
+            setVibe('');
+          } else {
+            setVibe(CV[aCat] || '');
+          }
+          renderCats(); renderSubs(); renderMenu();
+        };
+      });
+    }
+    function renderSubs() {
+      var nav = $('#sN');
+      if (aCat === 'All') { nav.innerHTML = ''; return; }
+      var subs = getSubs(aCat); if (!subs.length) { nav.innerHTML = ''; return; }
+      var h = '<button class="sb' + (aSub === 'All' ? ' on' : '') + '" data-s="All">All</button>';
+      subs.forEach(function (s) { h += '<button class="sb' + (s === aSub ? ' on' : '') + '" data-s="' + s + '">' + s + '</button>'; });
+      nav.innerHTML = h;
+      nav.querySelectorAll('.sb').forEach(function (b) { b.onclick = function () { aSub = b.dataset.s; renderSubs(); renderMenu(); }; });
+    }
+
+    /* ── Filtering ── */
+    function getItems() {
+      var d = MENU;
+      if (sQ) {
+        var q = sQ.toLowerCase();
+        d = d.filter(function (i) { return i.n.toLowerCase().indexOf(q) !== -1 || i.c.toLowerCase().indexOf(q) !== -1 || (i.s && i.s.toLowerCase().indexOf(q) !== -1); });
+      } else {
+        if (aCat !== 'All') d = d.filter(function (i) { return i.c === aCat; });
+        if (aSub !== 'All') d = d.filter(function (i) { return i.s === aSub; });
+      }
+      return d;
+    }
+
+    /* ── Card ── */
+    function mkCard(item, idx) {
+      var d = document.createElement('div');
+      d.className = 'c'; d.style.transitionDelay = Math.min(idx * 40, 280) + 'ms';
+      var has = item.img && item.img.length > 10;
+      var ic = CE[item.c] || '🍽️';
+      var inner = '<div class="ciw">';
+      if (has) {
+        inner += '<div class="sk"></div>';
+        inner += '<img class="ci" loading="lazy" decoding="async" referrerpolicy="no-referrer" src="' + item.img + '" alt="' + item.n + '">';
+      } else {
+        inner += '<div class="ph"><em>' + ic + '</em><small>' + item.n + '</small></div>';
+      }
+      inner += '</div><div class="cfo"><div class="cn2">' + item.n + '</div><div class="cp">₹' + item.p + '</div></div>';
+      d.innerHTML = inner;
+      var img = d.querySelector('.ci');
+      if (img) {
+        img.onload = function () { this.classList.add('ld'); var sk = this.previousElementSibling; if (sk) sk.classList.add('hd'); };
+        img.onerror = function () {
+          var self = this;
+          // Retry once with slightly different URL
+          if (!self.dataset.retry) {
+            self.dataset.retry = '1';
+            self.src = self.src.replace('&sz=w400', '&sz=w300');
+            return;
+          }
+          self.style.display = 'none';
+          var sk = self.previousElementSibling;
+          if (sk) sk.outerHTML = '<div class="ph"><em>' + ic + '</em><small>' + item.n + '</small></div>';
+        };
+      }
+      d.onclick = function () { openModal(item); };
+      return d;
+    }
+
+    /* ── Menu Render ── */
+    function renderMenuGroup(wrap, catItems) {
+      var subs = [];
+      catItems.forEach(function (i) { if (i.s && subs.indexOf(i.s) === -1) subs.push(i.s); });
+      if (subs.length > 0) {
+        subs.forEach(function (sub) {
+          var subTit = document.createElement('div'); subTit.className = 'st category-header sub-header';
+          subTit.innerHTML = sub;
+          wrap.appendChild(subTit);
+          var grid = document.createElement('div'); grid.className = 'g';
+          catItems.filter(function (i) { return i.s === sub; }).forEach(function (it, idx) { grid.appendChild(mkCard(it, idx)); });
+          wrap.appendChild(grid);
+        });
+        var noSub = catItems.filter(function (i) { return !i.s; });
+        if (noSub.length > 0) {
+          var grid = document.createElement('div'); grid.className = 'g';
+          noSub.forEach(function (it, idx) { grid.appendChild(mkCard(it, idx)); });
+          wrap.appendChild(grid);
+        }
+      } else {
+        var grid = document.createElement('div'); grid.className = 'g';
+        catItems.forEach(function (it, idx) { grid.appendChild(mkCard(it, idx)); });
+        wrap.appendChild(grid);
+      }
+    }
+
+    function renderMenu() {
+      var area = $('#mA'); area.innerHTML = '';
+      var items = getItems();
+      if (!items.length) { area.innerHTML = '<div class="nr">No items found.</div>'; return; }
+
+      if (aCat === 'All' && !sQ) {
+        var cats = []; items.forEach(function (i) { if (cats.indexOf(i.c) === -1) cats.push(i.c); });
+        cats.forEach(function (cat) {
+          var v = CV[cat] || 'neutral';
+          var wrap = document.createElement('div'); wrap.className = 'sec'; wrap.dataset.v = v;
+          var tit = document.createElement('div'); tit.className = 'st category-header';
+          tit.innerHTML = '<i></i>' + cat;
+          wrap.appendChild(tit);
+          renderMenuGroup(wrap, items.filter(function (i) { return i.c === cat; }));
+          area.appendChild(wrap);
+        });
+      } else {
+        var v = CV[aCat] || 'neutral';
+        var wrap = document.createElement('div'); wrap.className = 'sec';
+        if (aCat !== 'All') wrap.dataset.v = v;
+        renderMenuGroup(wrap, items);
+        area.appendChild(wrap);
+      }
+      observe();
+    }
+
+    /* ── Scroll Observer with VIBE transitions ── */
+    function observe() {
+      // Card/title reveal
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('vis'); io.unobserve(e.target); } });
+      }, { threshold: 0.05, rootMargin: '20px' });
+      $$('.c').forEach(function (c) { io.observe(c); });
+      $$('.st').forEach(function (t) { io.observe(t); });
+
+      // Section vibe — triggers cold/hot overlay on SCROLL
+      var sio = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting && e.intersectionRatio >= 0.2) {
+            e.target.classList.add('iv');
+            // Only update full-screen vibe when browsing "All"
+            if (aCat === 'All') {
+              var v = e.target.dataset.v;
+              if (v) setVibe(v);
+            }
+          }
+        });
+      }, { threshold: [0.2, 0.5] });
+      $$('.sec').forEach(function (s) { sio.observe(s); });
+    }
+
+    /* ── Modal — fixed close button + phone back ── */
+    var mTL, modalOpen = false;
+    function openModal(item) {
+      if (modalOpen) return;
+      modalOpen = true;
+      var ov = $('#modal');
+      var src = '';
+      if (item.exRaw) src = gdFull(item.exRaw);
+      else if (item.imgRaw) src = gdFull(item.imgRaw);
+      else if (item.ex) src = item.ex;
+      else if (item.img) src = item.img.replace('w400', 'w800');
+      var has = src && src.length > 10;
+      var ic = CE[item.c] || '🍽️';
+      var iw = $('#miw');
+      if (has) {
+        iw.innerHTML = '<img class="mi" referrerpolicy="no-referrer" src="' + src + '" alt="' + item.n + '">';
+        var mimg = iw.querySelector('.mi');
+        if (mimg) {
+          mimg.onload = function () { gsap.to(this, { scale: 1, opacity: 1, duration: .5, ease: 'power2.out' }); };
+          mimg.onerror = function () { this.outerHTML = '<div class="mph"><em>' + ic + '</em></div>'; };
+        }
+      } else {
+        iw.innerHTML = '<div class="mph"><em>' + ic + '</em></div>';
+      }
+      $('#mn').textContent = item.n;
+      $('#mp').textContent = '₹' + item.p;
+      $('#msb').textContent = item.s ? item.c + ' · ' + item.s : item.c;
+      ov.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      try { history.pushState({ modal: true }, ''); } catch (e) { }
+      if (mTL) mTL.kill();
+      mTL = gsap.timeline();
+      mTL.to('.mbg', { backgroundColor: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(22px)', webkitBackdropFilter: 'blur(22px)', duration: .3, ease: 'power2.out' }, 0)
+        .to('.mc', { y: 0, opacity: 1, scale: 1, duration: .45, ease: 'power3.out' }, 0.05)
+        .to('.mx', { opacity: 1, scale: 1, duration: .25, ease: 'back.out(2)' }, 0.2)
+        .to('#mn', { opacity: 1, y: 0, duration: .3, ease: 'power3.out' }, 0.25)
+        .to('#mp', { opacity: 1, y: 0, duration: .25, ease: 'power3.out' }, 0.3)
+        .to('#msb', { opacity: 1, y: 0, duration: .2, ease: 'power3.out' }, 0.35);
+    }
+    function closeModal(fromBack) {
+      if (!modalOpen) return;
+      modalOpen = false;
+      if (mTL) mTL.kill();
+      var tl = gsap.timeline({
+        onComplete: function () {
+          $('#modal').style.display = 'none';
+          document.body.style.overflow = '';
+          resetM();
+        }
+      });
+      tl.to('#mn,#mp,#msb', { opacity: 0, y: 6, duration: .12, ease: 'power2.in' }, 0)
+        .to('.mx', { opacity: 0, scale: .5, duration: .12 }, 0)
+        .to('.mc', { y: '100%', opacity: 0, duration: .3, ease: 'power3.in' }, 0.05)
+        .to('.mbg', { backgroundColor: 'rgba(0,0,0,0)', backdropFilter: 'blur(0)', webkitBackdropFilter: 'blur(0)', duration: .25 }, 0.08);
+      // Only go back in history if NOT triggered by phone back button
+      if (!fromBack) { try { history.back(); } catch (e) { } }
+    }
+    function resetM() {
+      gsap.set('.mc', { y: '100%', opacity: 0, scale: .96 });
+      gsap.set('.mx', { opacity: 0, scale: .5 });
+      gsap.set('#mn', { opacity: 0, y: 16 });
+      gsap.set('#mp', { opacity: 0, y: 10 });
+      gsap.set('#msb', { opacity: 0, y: 7 });
+      gsap.set('.mbg', { backgroundColor: 'rgba(0,0,0,0)', backdropFilter: 'blur(0)', webkitBackdropFilter: 'blur(0)' });
+    }
+    // Phone back button — only fires when user presses hardware back
+    window.addEventListener('popstate', function () {
+      if (modalOpen) closeModal(true);
+    });
+
+    /* ── Search ── */
+    var sT;
+    function onSrch(e) {
+      clearTimeout(sT);
+      sT = setTimeout(function () {
+        sQ = e.target.value.trim();
+        if (sQ) { aCat = 'All'; aSub = 'All'; renderCats(); renderSubs(); setVibe(''); }
+        renderMenu();
+      }, 120);
+    }
+
+    /* ── Mango Special Carousel ── */
+    function renderMango() {
+      var sec = $('#mangoSection');
+      var scroll = $('#mangoScroll');
+      if (!MANGO.length) { sec.style.display = 'none'; return; }
+      sec.style.display = '';
+      scroll.innerHTML = '';
+      MANGO.sort(function(a,b) { return (a.order||99) - (b.order||99); });
+      MANGO.forEach(function(item) {
+        var card = document.createElement('div');
+        card.className = 'mango-card' + (item.soon ? ' coming-soon' : '');
+        var has = item.img && item.img.length > 10 && !item.soon;
+        var imgHtml = '';
+        if (has) {
+          imgHtml = '<div class="sk"></div><img referrerpolicy="no-referrer" src="' + item.img + '" alt="' + item.n + '">';
+        } else {
+          imgHtml = '<div class="mc-ph"><em>🥭</em><small>' + item.n + '</small></div>';
+        }
+        card.innerHTML = '<div class="mc-img">' + imgHtml + '</div>' +
+          '<div class="mc-info"><div class="mc-name">' + item.n + '</div>' +
+          '<div class="mc-price">' + (item.soon ? 'Coming Soon' : '₹' + item.p) + '</div></div>';
+        var img = card.querySelector('img');
+        if (img) {
+          img.onload = function() { this.classList.add('ld'); var sk = this.previousElementSibling; if (sk) sk.classList.add('hd'); };
+          img.onerror = function() {
+            this.style.display = 'none';
+            var sk = this.previousElementSibling;
+            if (sk) sk.outerHTML = '<div class="mc-ph"><em>🥭</em><small>' + item.n + '</small></div>';
+          };
+        }
+        if (!item.soon) {
+          card.onclick = function() { openModal(item); };
+        }
+        scroll.appendChild(card);
+      });
+    }
+
+    /* ── Sticky Nav Observer ── */
+    function initSticky() {
+      var nav = $('#stickyNav');
+      if (!nav) return;
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+          nav.classList.toggle('stuck', !e.isIntersecting);
+        });
+      }, { threshold: 0, rootMargin: '-49px 0px 0px 0px' });
+      observer.observe(nav);
+    }
+
+    /* ── Init ── */
+    function initMenu() {
+      renderMango(); renderCats(); renderSubs(); renderMenu(); initSticky();
+      $('#si').addEventListener('input', onSrch);
+      $('#mx').onclick = function (e) { e.stopPropagation(); closeModal(false); };
+      $('.mbg').onclick = function () { closeModal(false); };
+      document.onkeydown = function (e) { if (e.key === 'Escape' && modalOpen) closeModal(false); };
+    }
+
+    /* ── Fallback Data (works without Excel) ── */
+    var FALLBACK_DATA = [{"c":"Thichshakes","s":"Regular Thickshake","n":"Vanilla Choco","p":70,"imgRaw":"https://drive.google.com/file/d/14LCJliu4Ux9uYi3vavUopNRL2IoYsgMd/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1OYS4bhwn-7cdXeq8z696I39Rg8IrlcAA/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Regular Thickshake","n":"Choco Gems","p":70,"imgRaw":"https://drive.google.com/file/d/1AgPdydUko5Ro-hWCxosgQkC56xWfATFA/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1enW6VRDg6YmFjQtgrhdHZLQkxMhk6Gye/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Regular Thickshake","n":"Choco Chips","p":90,"imgRaw":"https://drive.google.com/file/d/1yRHmbkE6deW_AkKF0tFbjtOb0vb6T2qO/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/18-7zbGebf-XqOvNDZSxICFHM8n6NzogY/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Regular Thickshake","n":"Chocopie","p":90,"imgRaw":"https://drive.google.com/file/d/1ERWOS-ccKWXArm5r4EvN3dY6BeN7wtrE/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/16gd4pzeklvK45MDn6GwV4L4sxu4yFJpF/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Regular Thickshake","n":"Butterscotch","p":110,"imgRaw":"https://drive.google.com/file/d/1khZa2zhsZjCrwT0CL4RYd4eCSjq9Lkc1/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1tsjma7pPCYo-hYyfvQQOmEa2YplnIixS/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Natural Thickshake","n":"Mango","p":100,"imgRaw":"https://drive.google.com/file/d/1giEW__rZcd3Uypor8-qANoJgMwj_T2IX/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1PaSG-OQ-Lfj4AQUVztN53yNKiQk0RcKo/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Natural Thickshake","n":"Strawberry","p":100,"imgRaw":"https://drive.google.com/file/d/1xoFProf83M2dD2lVjxOckppNq20pICtz/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1ZCLX8-A5lVhPgsIegtVGYC0iWZ0vHCKI/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Natural Thickshake","n":"Sitafal","p":110,"imgRaw":"https://drive.google.com/file/d/10fMW6bpEy_-lgMWN_hqc8YwiNh-nXivR/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1B_14TI1YmyPEDY1_Xaxm_DjVAJ_Ajwjo/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Natural Thickshake","n":"Pineapple","p":110,"imgRaw":"https://drive.google.com/file/d/1DF3GcF34oHzi3mMbiRCJijIU-9vEe12c/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1hPUmzyC1X2vaG9BA2h6w6j8EfSESz1jS/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Natural Thickshake","n":"Wild Blueberry","p":140,"imgRaw":"https://drive.google.com/file/d/1rvWRZ6Q3hXtgDk8cp9XK78UJ2e2Ro2-a/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1qiGdig2lJyvOjrfcZe9vbjWm7_IoqSMC/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Dry Fruit Thickshake","n":"Kesar Badam","p":100,"imgRaw":"https://drive.google.com/file/d/1CTxtBMSFvsHOjtLS1KWgWQpEHd722eAk/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1mM41rZFz586Eru_zR28ETNjwLJj6in1E/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Dry Fruit Thickshake","n":"Belgain Cashewnut","p":100,"imgRaw":"https://drive.google.com/file/d/1bhzHmEN4H5fM39JySLxxk2QHcFI0gqNX/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1fDbjhMtuRofDVanoM0zU1fOLIoMHNCxZ/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Dry Fruit Thickshake","n":"Dubai Pistachios","p":150,"imgRaw":"https://drive.google.com/file/d/1xxXjg9bu6KNoPMcRMsFh5CV9Fva5ok6N/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1IpWXG5WatvpXoUPWRCKeJEiTw3UrxI5R/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Dry Fruit Thickshake","n":"Kaju Rose","p":150,"imgRaw":"https://drive.google.com/file/d/1iKDxiRTUpvxH_VoiPX37Ucuc5AltzWpD/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/10oMizFYgFo68i8spq4ktF_7087s3F1Rc/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Dry Fruit Thickshake","n":"Royal Nuts Heaven","p":150,"imgRaw":"https://drive.google.com/file/d/1Hhy5EECUunIrQ8JNuIjOwJtd4F-gc2kq/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1kuj2jUXI2L7Sh9OaIqK6t6grj4MSgyMQ/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Chocolate Thickshake","n":"Oreo","p":100,"imgRaw":"https://drive.google.com/file/d/1rcW8HoxsWcQijZALi3NEyceFbgX_TiEm/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1gNhvOxLcLY8FsR6A8tZtorTiEJQQvdbc/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Chocolate Thickshake","n":"Kit Kat","p":100,"imgRaw":"https://drive.google.com/file/d/1ua6iuxdpu8Qmn9HbToWWcOGiWdGtQNXz/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1XOXW8hnwAa9_o6ovlW9rfqDYNfFzkGXW/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Chocolate Thickshake","n":"Swiss Chocolate","p":110,"imgRaw":"https://drive.google.com/file/d/19X_uihs3wWu_KnIPQxMLllr7xYKohegk/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1rH2Xk7AObbZbtQv81FieifJ-Ey9KtflZ/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Chocolate Thickshake","n":"Cadbury Crackle","p":130,"imgRaw":"https://drive.google.com/file/d/1lxlNS8GyXUlerdn7I0kGJmp9slEVTxpX/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1hzLLXK01f7_AUykuXWKHRM3R6MQvniOa/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Chocolate Thickshake","n":"Silk Hazelnut","p":130,"imgRaw":"https://drive.google.com/file/d/1RF83QTPcGHbF3uKZBDwqF3Jwi8XIfGyP/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1pgukVz2OqMv7GIZPGbJXZ1axAMHjbhgA/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Chocolate Thickshake","n":"Choco Lava","p":140,"imgRaw":"https://drive.google.com/file/d/1DQAvCKUQdMswEMM5cVQY9kASHUUVpR8i/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1bqPORadAwwJvcr5bMbs7Dk2QPYHBGEqS/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Dark Thickshake","n":"Bournville Brownie","p":140,"imgRaw":"https://drive.google.com/file/d/1Td-pg65siGrBupBPGFIm4uuBsUJYFUa-/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1iEvZOZRgutO7YDpFuBUiONs3W-Nm7XzX/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Dark Thickshake","n":"Royal Dark Chocolate","p":140,"imgRaw":"https://drive.google.com/file/d/1q-uQy8bCkegq-5uz5a8PsTBbbWqAilUF/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/16p3B9oSbNO8Y8NgTF5wKcuhFBAnOwXu-/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Dark Thickshake","n":"Cocoa Cranberry","p":160,"imgRaw":"https://drive.google.com/file/d/1j_Yi1jVxcmeKW4hxvZuB3Hz9vugiPWBK/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1ghdOpyoOt-VDhgWQvkypsAWSzvpikcw5/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Dark Thickshake","n":"Cocoa Brownie Ferrero","p":180,"imgRaw":"https://drive.google.com/file/d/1Y5RZ7q9EUcUVXa652h_MDAUIO3J20Muh/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1w_NWH2VXq6Tkp7_3tV30ZpkUdDIDCePg/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Brownie Thickshake","n":"Chocolate Brownie","p":110,"imgRaw":"https://drive.google.com/file/d/1PvVevcLQzFW1jX7QITHqfgBn76pL4N-a/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/17PQBYaXSkbwR5g2v_uesojnHsvhDv39v/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Brownie Thickshake","n":"Mocha Brownie","p":110,"imgRaw":"https://drive.google.com/file/d/1fBGyxYxnsQT20JWofx7xSMYNksLz0OhU/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1SEGqT4keO0-TqqxWnXL2FF1qWC32ImKP/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Brownie Thickshake","n":"Nutella Brownie","p":140,"imgRaw":"https://drive.google.com/file/d/1p1AQf6EsTmAxl8mfP2V1x785Ht5RQLcr/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1K2Wbj48GmF_wayoZbHlDp517_tuFSkXT/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Brownie Thickshake","n":"Kitkat Brownie","p":140,"imgRaw":"https://drive.google.com/file/d/1z0bqSrXVBwpTdO0AJ7779I9GFXJ8xNuB/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1JgNSWoSdOyJrN62nRBgfZgE9dNqSUNBd/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Brownie Thickshake","n":"Brownie Crunch","p":140,"imgRaw":"https://drive.google.com/file/d/1ziATYQfZ9HcLsJYnAq4gzy2G02pqxbSi/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1LBms94YIeupM8eziMBWNea5NXYwodc69/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Brownie Thickshake","n":"Choco Brownie Fudge","p":150,"imgRaw":"https://drive.google.com/file/d/18h-dUDwIKddcQo2FkN_25OUkTx___J0t/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1hcNDFS1o8HBy87gQiyFezTt1OPZI-E_O/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Brownie Thickshake","n":"Brownie Devil Crunch","p":150,"imgRaw":"https://drive.google.com/file/d/16nABXyOSGUzisZvMSFruj2eNF8WNQfWy/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1RJzC5cPkM-HK9EmZbGdcRt8Um2Go2AUX/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Brownie Thickshake","n":"Brownie Rocher","p":150,"imgRaw":"https://drive.google.com/file/d/1PuMbG-4CRcgNfbtKRrdytSoRPVUkzOZj/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1CNyhnvgUN4C1IwXEX3gd9ME8wqWFCCKo/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Nutella Thickshake","n":"Nutella","p":120,"imgRaw":"https://drive.google.com/file/d/1WKQGhty_vUO6aBmoEX_kKznyOn0jHr5I/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/16UeBW-zhbLE1ke44Hj4ynRaVLMv27GQp/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Nutella Thickshake","n":"Hazelnut Nutella","p":140,"imgRaw":"https://drive.google.com/file/d/13ksPsWL-2v74eLjExUqmT-bLB_OU82Cb/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/19X0TmXuRFzv6x_mhQsnLmzbu95s6jfu0/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Nutella Thickshake","n":"Nutella Brownie","p":140,"imgRaw":"https://drive.google.com/file/d/1yFVk8hFgbXwLkpGIlkHArQhx4bjuW2oy/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1O_RbE2stL6txvi7bv0u6MQqYeULabi5w/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Nutella Thickshake","n":"Nutella Crunch","p":150,"imgRaw":"https://drive.google.com/file/d/1cleTV-lM0ry82fg10FwFY7M4pmUnN2R7/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1wX9sadGixMtpOSBK8S98KK_P3la6eu3Y/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Nutella Thickshake","n":"Nutella Overdose Nutty","p":170,"imgRaw":"https://drive.google.com/file/d/1p5J3sXtsa0eCYS4F4dG1HIuBvxjhrm7s/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/18OwcwDJfmkZRoAuAUEM8cdCjIyMu7AQx/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Nutella Thickshake","n":"Nutella Tiramisu","p":180,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Ferrero Roacher Thickshake","n":"Nutties Rocher","p":150,"imgRaw":"https://drive.google.com/file/d/187JYL1i7An4QGKKG0BIarqHA37dnMdif/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1zi3dTSv69tU90I11H0_s-anm3jIMU6Uy/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Ferrero Roacher Thickshake","n":"Ferrero Devil Crunch","p":150,"imgRaw":"https://drive.google.com/file/d/1qItnbVUtLMYxd4UApIdnD5SMBXBSdVIE/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1wknIX0WbGa80NAKyV6GHorfZ4vchjdS6/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Ferrero Roacher Thickshake","n":"Nutella X Rocher","p":160,"imgRaw":"https://drive.google.com/file/d/1vHvBWrHK1EssftKcusMwSw-58-nVMMt_/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1OMvx09kfn28hpaeAKCJiGnjAya4raAUd/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Ferrero Roacher Thickshake","n":"Rocher Rocher","p":180,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Hatke Thickshake","n":"Red Velvet Blast","p":120,"imgRaw":"https://drive.google.com/file/d/1UMRQWgKS8r807JJlJtnug_-s9fRHjQIj/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1Yysh34nfGz61HCeCqMaT1_UjS-7ZVFRc/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Hatke Thickshake","n":"La Carmello","p":150,"imgRaw":"https://drive.google.com/file/d/1xX1-DbCkgZPh81kDEJ3ZcVFs0GjY9L21/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/19lnTRu2kiwRYtJmexTfmDb3Kz1aH-pvD/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Hatke Thickshake","n":"Lotus Biscoff","p":150,"imgRaw":"https://drive.google.com/file/d/1EMQkhYQy-oSR2DSGGjebKjyyWjyHjMIS/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1nEV9kGfrEq1sdttsY2LUM-OqksOVvxD0/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Hatke Thickshake","n":"Choco Bar","p":150,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Hatke Thickshake","n":"Caramel Popcorn","p":170,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Hatke Thickshake","n":"Crunchy Cookies","p":170,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Hatke Thickshake","n":"Nutella Cookies","p":180,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Hatke Thickshake","n":"Royal Baklawa","p":200,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Hot Chocolates","s":"","n":"Hot Chocolate","p":100,"imgRaw":"https://drive.google.com/file/d/1800zansSqfogKaPQkv60IQH3YiZJxpgU/view?usp=drivesdk","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Hot Chocolates","s":"","n":"Coffee Hot Chocolate","p":110,"imgRaw":"https://drive.google.com/file/d/1p9TYL8WclcCBkH5czjwh4YAFKvnsGHVw/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1pw6-y9eN0YHa5q86IazvpN15cxS6mwmV/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Hot Chocolates","s":"","n":"Hazelnut Hot Chocolate","p":120,"imgRaw":"https://drive.google.com/file/d/15sxICSeU-cSS5KObkaVRGQFdHPA_zMgr/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/11ntlyph3FicfFU2IKILbiDwHKi7oWR0e/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Hot Chocolates","s":"","n":"Brownie Hot Chocolate","p":120,"imgRaw":"https://drive.google.com/file/d/1NMEeldKaogVYxlO9YN7cCJjTwtmp-VJ7/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1THLj9kp1FzxEP7QB-MODs7NnqGWVffwW/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Hot Chocolates","s":"","n":"Hot Salted Caramel","p":140,"imgRaw":"https://drive.google.com/file/d/1ukXLuYzILB2NdT_Qkf5K6KsmsEzrEo69/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1jLh7YlNqRqrJIhAww-ApFaAIxdwu9kvx/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Hot Chocolates","s":"","n":"Dark Hot Chocolate","p":140,"imgRaw":"https://drive.google.com/file/d/1gpQGpaJupdxd5dy3GEUkMU7YLXOplha_/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1n42qbf5mVgXpLXFm2kR3-V8Exs0rf5nb/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Hot Brownies","s":"","n":"Choco Lava Bomb","p":80,"imgRaw":"https://drive.google.com/file/d/1WrdCatfuquAXp0_b73KqaodQ7I72qX8e/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1NluyXS4B-tROaK9O0XXIgthZJrC0TOSk/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Hot Brownies","s":"","n":"Brownie Fudge","p":90,"imgRaw":"https://drive.google.com/file/d/1bK2DeFEOpSHDEnG5o2BF1F6JLHG2s0jc/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1bcWRhUUGqBtOIYHUDL98OmGWZoaibe1Z/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Hot Brownies","s":"","n":"Mocha Brownie","p":100,"imgRaw":"https://drive.google.com/file/d/1yJ-J9xubMA6AwfKq3URx1qX_-eTEalmC/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1BTkJyc4HXIOrUlclMIJk5G7OdSTaqjhZ/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Hot Brownies","s":"","n":"Kit Kat Brownie","p":120,"imgRaw":"https://drive.google.com/file/d/1-NPaqHUmD-FTz2Toiw5mmNLLjlxmv-lv/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/14oMI-VIgLL_84_5Z6GRPbUkhKE-T14A9/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Hot Brownies","s":"","n":"Hot Sizzling Brownie","p":120,"imgRaw":"https://drive.google.com/file/d/14yCwYDSiSMhBZSvc8ywLSizMyXB2NR2v/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/14Bgkz8j6GHiXc39qg09GHigu6HSkmjO3/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Hot Brownies","s":"","n":"Hazelnut Brownie","p":130,"imgRaw":"https://drive.google.com/file/d/1-3udq1DEW0y7E_btTxntdGX6BOLrxQcq/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1QoDtRMQ3yOtX7AuEgEb9T9A8_nyuJBgl/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Hot Brownies","s":"","n":"Belgium Brownie Nutella","p":130,"imgRaw":"https://drive.google.com/file/d/1exVE2lkWfMDSaS8xlbesjG3eo3KZ1DbD/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1CvXLF8O5bAYBWbG9JcpdQKgppX5MD21-/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Hot Brownies","s":"","n":"Choco Lava Bomb","p":150,"imgRaw":"https://drive.google.com/file/d/1WrdCatfuquAXp0_b73KqaodQ7I72qX8e/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1NluyXS4B-tROaK9O0XXIgthZJrC0TOSk/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Hot Brownies","s":"","n":"Roasted Almond Brownie","p":150,"imgRaw":"https://drive.google.com/file/d/1Toj3m-49lM8r5nlOtWUvuyKPjagczdT7/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1TkO7xirQAX9HuUBnztvyqEw-8Gc-LHd-/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Cold Coffees","s":"","n":"Creamy Cold Coffee","p":100,"imgRaw":"https://drive.google.com/file/d/1zvnapEssLkGYT0cLd42JxRkfhWc_2ZtF/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1-RqZRY4OZllsa6gt7CJ3Zdvy1CBHM7ES/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Cold Coffees","s":"","n":"Mocha Coffee Chocolate","p":110,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Cold Coffees","s":"","n":"Java Chips","p":120,"imgRaw":"https://drive.google.com/file/d/1wV9jm1atkEQj2jiDZUZQoW5UaF7-sTqi/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1pXXabZaCK7sDwrGZJwDV7bUX54qg6XgT/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Cold Coffees","s":"","n":"Roasted Hazelnut","p":130,"imgRaw":"https://drive.google.com/file/d/1qszVDjOISkqCOnIa6kktHefyi-51IZMk/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1TWHqKyqyrpUjNmWOqREGdFmIFRrQAbL7/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Cold Coffees","s":"","n":"French Vanilla","p":130,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Cold Coffees","s":"","n":"Choco Frappe","p":130,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"White Truffle","p":120,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Dark Knight","p":120,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Chocolate Overload","p":130,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Triple Chocolate Paradise","p":130,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Dark & White Fantasy","p":130,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Oreo Crunch","p":130,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Kit Kat Break","p":130,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Swiss Choco","p":130,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Choco Mocha","p":130,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Butterscotch Crunch","p":140,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Almond Brownie","p":140,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Pista","p":150,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Crackling Nutella","p":150,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Hazelnut","p":150,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Classic Waffles","n":"Brownie Kitkat","p":150,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Jawbreaker Waffles","n":"Double Chocolate","p":170,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Jawbreaker Waffles","n":"Oreo Mocha","p":170,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Jawbreaker Waffles","n":"Biscoff Nutella","p":180,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Waffles","s":"Jawbreaker Waffles","n":"Kitkat Oreo Brownie","p":180,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Pancakes","s":"","n":"Belgian Milk","p":120,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Pancakes","s":"","n":"Milkyway White","p":120,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Pancakes","s":"","n":"Belgain Dark","p":120,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Pancakes","s":"","n":"Biscoff","p":150,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Pancakes","s":"","n":"Tiramisu","p":160,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Pancakes","s":"","n":"Hazelnut Almond","p":160,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Toppings","s":"","n":"Vanilla Ice cream","p":40,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Toppings","s":"","n":"Brownie","p":40,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Toppings","s":"","n":"Gems","p":40,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Toppings","s":"","n":"Almond","p":40,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Toppings","s":"","n":"Rocher","p":50,"imgRaw":"","exRaw":"","mango":false,"soon":false,"order":99},{"c":"Icecreams","s":"","n":"Vanilla Icecream","p":70,"imgRaw":"https://drive.google.com/file/d/1CLIkim9lBReBFvLYwW3AVRwkYA-XGB0r/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1CLIkim9lBReBFvLYwW3AVRwkYA-XGB0r/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Icecreams","s":"","n":"Butterscotch Icecream","p":80,"imgRaw":"https://drive.google.com/file/d/1qFBmGnEpaBgZUhwuJypg2CbnPsR14FwY/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1qFBmGnEpaBgZUhwuJypg2CbnPsR14FwY/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Icecreams","s":"","n":"Choco chips Icecream","p":80,"imgRaw":"https://drive.google.com/file/d/16JBk2SEU16nO7E5OulhZxmVC7_IQBjeV/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/16JBk2SEU16nO7E5OulhZxmVC7_IQBjeV/view?usp=drivesdk","mango":false,"soon":false,"order":99},{"c":"Thichshakes","s":"Mango Special","n":"Mango Thickshake","p":100,"imgRaw":"https://drive.google.com/file/d/1giEW__rZcd3Uypor8-qANoJgMwj_T2IX/view?usp=drivesdk","exRaw":"https://drive.google.com/file/d/1PaSG-OQ-Lfj4AQUVztN53yNKiQk0RcKo/view?usp=drivesdk","mango":true,"soon":false,"order":1},{"c":"Thichshakes","s":"Mango Special","n":"Chunky Mango Thickshake","p":140,"imgRaw":"","exRaw":"","mango":true,"soon":false,"order":2},{"c":"Thichshakes","s":"Mango Special","n":"Mango Milk Shake","p":140,"imgRaw":"","exRaw":"","mango":true,"soon":false,"order":3},{"c":"Thichshakes","s":"Mango Special","n":"Mango Bowl","p":"Coming Soon","imgRaw":"","exRaw":"","mango":true,"soon":true,"order":4},{"c":"Thichshakes","s":"Mango Special","n":"Mango Cream","p":"Coming Soon","imgRaw":"","exRaw":"","mango":true,"soon":true,"order":5}];
+
+    /* ── Process fallback data through URL converters ── */
+    function processFallback() {
+      MANGO = [];
+      MENU = FALLBACK_DATA.map(function (i) {
+        var item = {
+          c: i.c, s: i.s, n: i.n, p: i.p,
+          img: gdCard(i.imgRaw || ''),
+          imgRaw: i.imgRaw || '',
+          ex: gdFull(i.exRaw || ''),
+          exRaw: i.exRaw || '',
+          soon: i.soon || false
+        };
+        if (i.mango) {
+          MANGO.push({ c: item.c, s: item.s, n: item.n, p: item.p, img: item.img, imgRaw: item.imgRaw, ex: item.ex, exRaw: item.exRaw, soon: i.soon || false, order: i.order || 99 });
+        }
+        return item;
+      });
+    }
+
+    /* ── Boot ── */
+    document.addEventListener('DOMContentLoaded', function () {
+      resetM();
+      // Try Excel first, then fallback to embedded data
+      var done = function () { playIntro(initMenu); };
+      try {
+        if (typeof XLSX === 'undefined') throw new Error('No XLSX lib');
+        fetch(EXCEL_FILE)
+          .then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.arrayBuffer();
+          })
+          .then(function (buf) {
+            var wb = XLSX.read(buf, { type: 'array' });
+            var ws = wb.Sheets[wb.SheetNames[0]];
+            var rows = XLSX.utils.sheet_to_json(ws);
+            MANGO = [];
+            MENU = rows.map(function (r) {
+              var imgRaw = r['Image '] || r['Image'] || '';
+              var exRaw = r['Exploded Image'] || '';
+              var isMango = (r['Mango Special'] || '').toString().trim().toLowerCase() === 'yes';
+              var isSoon = (r['Coming Soon'] || '').toString().trim().toLowerCase() === 'yes';
+              var mangoOrder = parseInt(r['Mango Special Order']) || 99;
+              var item = {
+                c: (r['Category'] || '').trim(),
+                s: (r['Sub Category'] || '').trim(),
+                n: (r['Menu Item'] || '').trim(),
+                p: r['My Selling Price (Rs.)'] || 0,
+                img: gdCard(imgRaw),
+                imgRaw: imgRaw,
+                ex: gdFull(exRaw),
+                exRaw: exRaw,
+                soon: isSoon
+              };
+              if (isMango) {
+                MANGO.push({ c: item.c, s: item.s, n: item.n, p: item.p, img: item.img, imgRaw: item.imgRaw, ex: item.ex, exRaw: item.exRaw, soon: isSoon, order: mangoOrder });
+              }
+              return item;
+            }).filter(function (i) { return i.c && i.n; });
+            console.log('Excel loaded: ' + MENU.length + ' items');
+            done();
+          })
+          .catch(function (err) {
+            console.log('Excel failed (' + err.message + '), using fallback');
+            processFallback();
+            done();
+          });
+      } catch (e) {
+        console.log('Boot error, using fallback: ' + e.message);
+        processFallback();
+        done();
+      }
+    });
+  </script>
+</body>
+
+</html>
